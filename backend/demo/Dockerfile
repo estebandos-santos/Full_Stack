@@ -1,12 +1,15 @@
-# Étape 1 : Builder l’application
-FROM maven:3.9.2-eclipse-temurin-17 AS build
-WORKDIR /app
-COPY . /app
-RUN mvn clean package -DskipTests
+FROM openjdk:17-jdk-slim
 
-# Étape 2 : Exécuter l’application
-FROM eclipse-temurin:17-jre
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+
+COPY .mvn/ .mvn
+COPY mvnw .
+COPY pom.xml .
+RUN ./mvnw dependency:go-offline -B
+
+COPY src ./src
+
+RUN ./mvnw clean package -DskipTests
+
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+CMD ["./mvnw", "spring-boot:run"]

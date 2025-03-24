@@ -1,20 +1,14 @@
-# Étape 1 : Build Angular
-FROM node:18 AS builder
+FROM node:20 AS build
 
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+
+COPY package.json package-lock.json ./
+RUN npm ci --force
+
 COPY . .
-RUN npm run build
 
-# Étape 2 : Serve Angular avec NGINX
+RUN npm run build --prod
 FROM nginx:alpine
-
-# ⚠️ Très important : vider le dossier par défaut de NGINX
-RUN rm -rf /usr/share/nginx/html/*
-
-# Copier les fichiers Angular générés vers le dossier NGINX
-COPY --from=builder /app/dist/frontend /usr/share/nginx/html
-
+COPY --from=build /app/dist/frontend/browser/* /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
